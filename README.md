@@ -22,8 +22,8 @@ sjsu-ansible/
 ├── hosts.ini # Ansible inventory with VM IPs
 ├── site.yml # Playbook (deploy + undeploy)
 └── templates/
-├── index.html.j2 # Hello World template
-└── sjsu.conf.j2 # Nginx site config (port 8080)
+     ├── index.html.j2 # Hello World template
+		 └── sjsu.conf.j2 # Nginx site config (port 8080)
 
 ---
 
@@ -32,20 +32,25 @@ sjsu-ansible/
 ### 1. Test connectivity
 ```bash
 ansible -i hosts.ini webservers -m ping
-
+```
 ### 2. Deploy webservers
+```
 ansible-playbook -i hosts.ini site.yml --tags deploy
 Visit:
 http://<VM1_IP>:8080 → Hello World from SJSU-1
 http://<VM2_IP>:8080 → Hello World from SJSU-2
-
+```
 ### 3. Undeploy servers
+```
 ansible-playbook -i hosts.ini site.yml --tags undeploy
 
-
+```
 📸 Demo
+```
 Screenshots and demo video included in the assignment Word report.
 
+```
 📌 Author
+```
 Name: Shreram
 Course: Software Engineering Masters, SJSU – Data Science Specialization
