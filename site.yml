@@ -1,0 +1,103 @@
+---
+# site.yml
+# Deploy and undeploy web servers on port 8080 using Nginx
+
+- name: DEPLOY web servers to port 8080
+  hosts: webservers
+  become: true
+  tags: [deploy]
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Install nginx
+      apt:
+        name: nginx
+        state: present
+
+    - name: Create web root
+      file:
+        path: /var/www/sjsu
+        state: directory
+        owner: www-data
+        group: www-data
+        mode: "0755"
+
+    - name: Deploy index.html
+      template:
+        src: templates/index.html.j2
+        dest: /var/www/sjsu/index.html
+        owner: www-data
+        group: www-data
+        mode: "0644"
+
+    - name: Deploy nginx site config
+      template:
+        src: templates/sjsu.conf.j2
+        dest: /etc/nginx/sites-available/sjsu.conf
+        mode: "0644"
+      notify: reload nginx
+
+    - name: Enable site
+      file:
+        src: /etc/nginx/sites-available/sjsu.conf
+        dest: /etc/nginx/sites-enabled/sjsu.conf
+        state: link
+      notify: reload nginx
+
+    - name: Disable default site
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+      notify: reload nginx
+
+    - name: Ensure nginx is running
+      service:
+        name: nginx
+        state: started
+        enabled: true
+
+  handlers:
+    - name: reload nginx
+      service:
+        name: nginx
+        state: reloaded
+
+- name: UNDEPLOY web servers and clean up
+  hosts: webservers
+  become: true
+  tags: [undeploy]
+  tasks:
+    - name: Stop nginx
+      service:
+        name: nginx
+        state: stopped
+        enabled: false
+      ignore_errors: true
+
+    - name: Remove web root
+      file:
+        path: /var/www/sjsu
+        state: absent
+
+    - name: Remove site config
+      file:
+        path: /etc/nginx/sites-available/sjsu.conf
+        state: absent
+
+    - name: Remove enabled site link
+      file:
+        path: /etc/nginx/sites-enabled/sjsu.conf
+        state: absent
+
+    - name: Remove nginx package
+      apt:
+        name: nginx
+        state: absent
+      ignore_errors: true
+
+    - name: Autoremove residual packages
+      apt:
+        autoremove: yes
